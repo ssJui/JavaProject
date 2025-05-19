@@ -5,28 +5,36 @@ import java.util.Random;
 import javax.swing.*;
 
 public class PacMan extends JPanel implements ActionListener, KeyListener{
+   
+    int scaredTimer = 0;
+
     class Block {
         int x;
         int y;
         int width;
         int height;
         Image image;
+        Image normalImage;
+
 
         int startX;
         int startY;
         char direction = 'U';
         int velocityX = 0;
         int velocityY = 0;
+        int scaredTimer = 0;
+        boolean scared = false;
 
         Block(Image image, int x, int y, int width, int height) {
             this.image = image;
+            this.normalImage = image;
             this.x = x;
             this.y = y;
             this.width = width;
             this.height = height;
             this.startX = x;
             this.startY = y;
-        }
+        }     
 
         void updateDirection(char direction) {
             char prevDirection = this.direction;
@@ -79,6 +87,7 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
     private Image orangeGhostImage;
     private Image pinkGhostImage;
     private Image redGhostImage;
+    private Image scaredGhostImage;
 
     private Image pacmanUpImage;
     private Image pacmanDownImage;
@@ -89,7 +98,7 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
     //Ghosts: b = blue, o = orange, p = pink, r = red
     private String[] tileMap = {
         "XXXXXXXXXXXXXXXXXXX",
-        "X        X        X",
+        "X*       X       *X",
         "X XX XXX X XXX XX X",
         "X                 X",
         "X XX X XXXXX X XX X",
@@ -107,7 +116,7 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
         "XX X X XXXXX X X XX",
         "X    X   X   X    X",
         "X XXXXXX X XXXXXX X",
-        "X                 X",
+        "X*               *X",
         "XXXXXXXXXXXXXXXXXXX" 
     };
 
@@ -135,6 +144,8 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
         orangeGhostImage = new ImageIcon(getClass().getResource("./orangeGhost.png")).getImage();
         pinkGhostImage = new ImageIcon(getClass().getResource("./pinkGhost.png")).getImage();
         redGhostImage = new ImageIcon(getClass().getResource("./redGhost.png")).getImage();
+        scaredGhostImage = new ImageIcon(getClass().getResource("./scaredGhost.png")).getImage();
+
 
         pacmanUpImage = new ImageIcon(getClass().getResource("./pacmanUp.png")).getImage();
         pacmanDownImage = new ImageIcon(getClass().getResource("./pacmanDown.png")).getImage();
@@ -191,6 +202,12 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
                     Block food = new Block(null, x + 14, y + 14, 4, 4);
                     foods.add(food);
                 }
+                else if (tileMapChar == '*') { // power pellet
+                    Block pellet = new Block(null, x + 12, y + 12, 8, 8); // slightly bigger than food
+                    foods.add(pellet); 
+                    pellet.image = null;    
+                }
+
             }
         }
     }
@@ -269,9 +286,17 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
         Block foodEaten = null;
         for (Block food : foods) {
             if (collision(pacman, food)) {
-                foodEaten = food;
-                score += 10;
-            }
+        foodEaten = food;
+        if (food.width == 4 && food.height == 4) {
+            // Regular food
+            score += 10;
+        } else if (food.width == 8 && food.height == 8) {
+            // Power pellet
+            score += 50;
+            scareGhosts();
+        }
+        break; // Only eat one food per move
+    }
         }
         foods.remove(foodEaten);
 
@@ -280,6 +305,14 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
             resetPositions();
         }
     }
+
+    public void scareGhosts() {
+         this.scaredTimer = 60; // lasts for 60 ticks (~3 seconds)
+        for (Block ghost : ghosts) {
+              ghost.scared = true;
+              ghost.image = scaredGhostImage;
+            }
+        }
 
     public boolean collision(Block a, Block b) {
         return  a.x < b.x + b.width &&
@@ -303,6 +336,18 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
     public void actionPerformed(ActionEvent e) {
         move();
         repaint();
+        if (scaredTimer > 0) {
+            scaredTimer--;
+        if (scaredTimer == 0) {
+          for (Block ghost : ghosts) {
+            ghost.scared = false;
+            if (ghost.image == scaredGhostImage) {
+                ghost.image = ghost.normalImage; 
+            }
+          }
+        }
+    }
+
         if (gameOver) {
             gameLoop.stop();
         }
