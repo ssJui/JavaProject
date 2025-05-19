@@ -6,6 +6,9 @@ import javax.swing.*;
 
 public class PacMan extends JPanel implements ActionListener, KeyListener{
    
+    enum GameState { START, PLAYING, GAME_OVER }
+    GameState gameState = GameState.START;
+
     int scaredTimer = 0;
 
     class Block {
@@ -15,7 +18,6 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
         int height;
         Image image;
         Image normalImage;
-
 
         int startX;
         int startY;
@@ -218,6 +220,25 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
     }
 
     public void draw(Graphics g) {
+
+        if (gameState == GameState.START) {
+        g.setColor(Color.YELLOW);
+        g.setFont(new Font("Arial", Font.BOLD, 32));
+        g.drawString("PAC-MAN", boardWidth / 2 - 80, boardHeight / 2 - 50);
+        g.setFont(new Font("Arial", Font.PLAIN, 18));
+        g.drawString("Press any key to start", boardWidth / 2 - 90, boardHeight / 2);
+        return;
+    }
+
+    if (gameState == GameState.GAME_OVER) {
+        g.setColor(Color.RED);
+        g.setFont(new Font("Arial", Font.BOLD, 32));
+        g.drawString("Game Over", boardWidth / 2 - 90, boardHeight / 2 - 50);
+        g.setFont(new Font("Arial", Font.PLAIN, 18));
+        g.drawString("Final Score: " + score, boardWidth / 2 - 60, boardHeight / 2 - 10);
+        g.drawString("Press any key to restart", boardWidth / 2 - 100, boardHeight / 2 + 30);
+        return;
+    }
         g.drawImage(pacman.image, pacman.x, pacman.y, pacman.width, pacman.height, null);
 
         for (Block ghost : ghosts) {
@@ -235,12 +256,7 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
 
         //score
         g.setFont(new Font("Arial", Font.PLAIN, 18));
-        if (gameOver) {
-            g.drawString("Game Over: " + String.valueOf(score), tileSize/2, tileSize/2);
-        }
-        else {
-            g.drawString("x" + String.valueOf(lives) + " Score: " + String.valueOf(score), tileSize/2, tileSize/2);
-        }
+        g.drawString("x" + lives + " Score: " + score, tileSize / 2, tileSize / 2);
     }
 
     public void move() {
@@ -334,6 +350,8 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
 
     @Override
     public void actionPerformed(ActionEvent e) {
+        if (gameState != GameState.PLAYING) return;
+        
         move();
         repaint();
         if (scaredTimer > 0) {
@@ -349,6 +367,7 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
     }
 
         if (gameOver) {
+            gameState = GameState.GAME_OVER;
             gameLoop.stop();
         }
     }
@@ -361,14 +380,28 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
 
     @Override
     public void keyReleased(KeyEvent e) {
-        if (gameOver) {
-            loadMap();
-            resetPositions();
-            lives = 3;
-            score = 0;
-            gameOver = false;
-            gameLoop.start();
+
+        if (gameState == GameState.START) {
+          gameState = GameState.PLAYING;
+          gameLoop.start();
+          repaint();
+          return;
         }
+
+       if (gameState == GameState.GAME_OVER) {
+          loadMap();
+          resetPositions();
+          lives = 3;
+          score = 0;
+          gameOver = false;
+          gameState = GameState.PLAYING;
+          gameLoop.start();
+          repaint();
+          return;
+        }
+
+       if (gameState != GameState.PLAYING) return;
+
         //System.out.println("KeyEvent: " + e.getKeyCode());
         if (e.getKeyCode() == KeyEvent.VK_UP) {
             pacman.updateDirection('U');
