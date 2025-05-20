@@ -155,6 +155,7 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
         pacmanRightImage = new ImageIcon(getClass().getResource("./pacmanRight.png")).getImage();
 
         loadMap();
+        
         for (Block ghost : ghosts) {
             char newDirection = directions[random.nextInt(4)];
             ghost.updateDirection(newDirection);
@@ -400,7 +401,7 @@ public class PacMan extends JPanel implements ActionListener, KeyListener{
           return;
         }
 
-       if (gameState != GameState.PLAYING) return;
+    if (gameState != GameState.PLAYING) return;
 
         //System.out.println("KeyEvent: " + e.getKeyCode());
         if (e.getKeyCode() == KeyEvent.VK_UP) {
